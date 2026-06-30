@@ -1,22 +1,24 @@
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import useForm from '../../hooks/useForm'
 import { login } from '../../services/authService'
 import useRequest from '../../hooks/useRequest'
+import { AuthContext } from '../../context/AuthContext'
 
 export const LoginScreen = () => {
-
+    const { login: syncroLogin } = useContext(AuthContext)
     const navigate = useNavigate()
 
    /*  const [searchParams, setSearchParams] = useSearchParams()
     alert(searchParams.get('test')) */
 
-    const {sendRequest: sendRequestLogin, 
-        loading: loginRequestLoading,  
+    const {
+        sendRequest: sendRequestLogin, 
+        loading: loginRequestLoading,
         error: loginRequestError, 
         response: loginRequestResponse
-    }= useRequest()
-
+    } = useRequest()
+    
     const initial_form_state = {
         email: '',
         password: ''
@@ -25,8 +27,9 @@ export const LoginScreen = () => {
     function onSubmit (formData){
         console.log("un usuario intento iniciar sesion", formData)
         sendRequestLogin(
-        () => login(formData.email, formData.password)
+            () => login(formData.email, formData.password)
         )
+
     }
 
     console.log(
@@ -42,29 +45,21 @@ export const LoginScreen = () => {
     veces se recarga una función. ¿Qué función? → () => {}   */
     useEffect(
         () => {
-            console.log('Se ejecutó el efecto')
-            //si el login fue exitoso, 
+            //si el login fue exitoso
             if(loginRequestResponse?.ok){
-                console.log('Login exitoso')
-                localStorage.setItem(
-                    'auth_token',
-                    loginRequestResponse?.data?.access_token
-
-                )
+                syncroLogin(loginRequestResponse?.data?.access_token)
                 navigate('/home')
+
             }
         },
     [
         loginRequestResponse //nos interesa que el efecto se ejecute CADA VEZ que cambie nuestro estado de respuesta, ya que ahora la respuesta puede ser exitosa 
     ]
     )
-
-
-    
+ 
     const {formState, handleChange, handleSubmit} = useForm(initial_form_state, onSubmit)
 
-
-    return (
+return (
         <div>
             <h1>Iniciar sesion</h1>
 
@@ -80,18 +75,18 @@ export const LoginScreen = () => {
 
                 <button disabled={loginRequestLoading || loginRequestResponse?.ok}>
                     {
-                        loginRequestLoading
-                        ? 'Iniciando sesión...'
-                        : 'Iniciar sesión'
+                        loginRequestLoading 
+                        ? 'Iniciando sesion...'
+                        : 'Iniciar sesion'
                     }
-                    </button>
-                    {
-                        loginRequestError && !loginRequestLoading &&
-                        <>
-                        <br />
-                        <span style={{color:'red'}}> Error: {loginRequestError}</span>
-                        </>      
-                    }
+                </button>
+                {
+                    loginRequestError && !loginRequestLoading &&
+                    <>
+                        <br/>
+                        <span style={{color: 'red'}}>Error: {loginRequestError}</span>
+                    </>
+                }
             </form>
             <p>Si no tienes cuenta <Link to={'/register'}>Registrate</Link></p>
         </div>
