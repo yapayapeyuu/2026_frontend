@@ -14,24 +14,33 @@ function getAuthHeaders() {
     };
 }
 
+async function parseJsonResponse(response_http, defaultErrorMessage) {
+    const contentType = response_http.headers.get('content-type') || '';
+
+    if (!contentType.includes('application/json')) {
+        throw new Error(`${defaultErrorMessage}. El servidor no devolvió una respuesta JSON válida.`);
+    }
+
+    const response = await response_http.json();
+
+    if (!response_http.ok || !response.ok) {
+        throw new Error(response.message || defaultErrorMessage);
+    }
+
+    return response;
+}
+
 /**
  * Obtiene la lista de workspaces asociados al usuario autenticado.
  * @returns {Promise<Object>} Respuesta de la API con la lista de workspaces.
  */
-
 export async function getWorkspaces() {
     const response_http = await fetch(`${ENVIRONMENT.URL_API}/api/workspace`, {
         method: 'GET',
         headers: getAuthHeaders()
     });
 
-    const response = await response_http.json();
-
-    if (!response.ok) {
-        throw new Error(response.message || 'Error al obtener las notas');
-    }
-
-    return response;
+    return parseJsonResponse(response_http, 'Error al obtener las notas');
 }
 
 /**
@@ -48,13 +57,24 @@ export async function createWorkspace(payload = {}) {
         })
     });
 
-    const response = await response_http.json();
+    return parseJsonResponse(response_http, 'Error al crear la nota');
+}
 
-    if (!response.ok) {
-        throw new Error(response.message || 'Error al crear la nota');
-    }
+/**
+ * Actualiza una nota reutilizando el endpoint existente de workspaces.
+ * La validación final del nombre vacío se mantiene en el backend.
+ * @param {string} workspace_id ID de la nota/workspace.
+ * @param {Object} payload Campos a actualizar.
+ * @returns {Promise<Object>} Respuesta de la API con la nota actualizada.
+ */
+export async function updateWorkspace(workspace_id, payload = {}) {
+    const response_http = await fetch(`${ENVIRONMENT.URL_API}/api/workspace/${workspace_id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+    });
 
-    return response;
+    return parseJsonResponse(response_http, 'Error al actualizar la nota');
 }
 
 /**
@@ -69,38 +89,38 @@ export async function deleteWorkspace(workspace_id) {
         headers: getAuthHeaders()
     });
 
-    const response = await response_http.json();
-
-    if (!response.ok) {
-        throw new Error(response.message || 'Error al eliminar la nota');
-    }
-
-    return response;
+    return parseJsonResponse(response_http, 'Error al eliminar la nota');
 }
 
-
-
-
-/* export async function getWorkspaces() {
-    const token = localStorage.getItem(AUTH_TOKEN_LOCALSTORAGE_KEY);
-    
-    if (!token) {
-        throw new Error("No hay un token de sesión activo");
-    }
-
-    const response_http = await fetch(`${ENVIRONMENT.URL_API}/api/workspace`, {
+/**
+ * Obtiene integrantes aceptados de una nota.
+ * @param {string} workspace_id ID de la nota/workspace.
+ * @returns {Promise<Object>} Respuesta de la API con integrantes.
+ */
+export async function getWorkspaceMembers(workspace_id) {
+    const response_http = await fetch(`${ENVIRONMENT.URL_API}/api/workspace/${workspace_id}/members`, {
         method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
+        headers: getAuthHeaders()
     });
 
-    const response = await response_http.json();
+    return parseJsonResponse(response_http, 'Error al obtener los integrantes');
+}
 
-    if (!response.ok) {
-        throw new Error(response.message || "Error al obtener los espacios de trabajo");
-    }
+/**
+ * Envía invitación por email para colaborar en una nota.
+ * @param {string} workspace_id ID de la nota/workspace.
+ * @param {string} invited_email Email del usuario invitado.
+ * @returns {Promise<Object>} Respuesta de la API.
+ */
+export async function inviteWorkspaceMember(workspace_id, invited_email) {
+    const response_http = await fetch(`${ENVIRONMENT.URL_API}/api/workspace/${workspace_id}/members`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+            invited_email,
+            role: 'colaborador'
+        })
+    });
 
-    return response;
-} */
+    return parseJsonResponse(response_http, 'Error al enviar la invitación');
+}

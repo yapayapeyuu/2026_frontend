@@ -4,6 +4,7 @@ import { LoginScreen } from './screens/LoginScreen/LoginScreen'
 import { RegisterScreen } from './screens/RegisterScreen/RegisterScreen'
 import { HomeScreen } from './screens/HomeScreen/HomeScreen'
 import { ResetPasswordScreen } from './screens/ResetPasswordScreen/ResetPasswordScreen'
+import { WorkspaceScreen } from './screens/WorkspaceScreen/WorkspaceScreen'
 import { AuthContextProvider } from './context/AuthContext'
 import { WorkspacesContextProvider } from './context/WorkspacesContext'
 import AuthMiddleware from './middlewares/AuthMiddleware'
@@ -42,6 +43,10 @@ const App = () => {
               path='/home'
               element={<HomeScreen />}
             />
+             <Route
+                          path='/workspace/:workspace_id'
+                          element={<WorkspaceScreen />}
+                        />
           </Route>
         </Route>
 
