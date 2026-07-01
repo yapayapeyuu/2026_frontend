@@ -1,4 +1,81 @@
-import React, { createContext, useEffect } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
+import { Outlet } from 'react-router';
+import useRequest from '../hooks/useRequest';
+import { createWorkspace, deleteWorkspace, getWorkspaces } from '../services/workspaceService';
+
+export const WorkspacesContext = createContext({
+    workspaces: [],
+    loading: false,
+    error: null,
+    actionLoading: false,
+    actionError: null,
+    refetch: () => {},
+    createNewWorkspace: async () => {},
+    deleteWorkspaceById: async () => {}
+});
+
+export const WorkspacesContextProvider = () => {
+    const { sendRequest, loading, response, error } = useRequest();
+    const [actionLoading, setActionLoading] = useState(false);
+    const [actionError, setActionError] = useState(null);
+
+    const fetchWorkspaces = () => {
+        sendRequest(getWorkspaces);
+    };
+
+    const createNewWorkspace = async () => {
+        try {
+            setActionLoading(true);
+            setActionError(null);
+            await createWorkspace({ nombre: 'Nota', descripcion: '' });
+            fetchWorkspaces();
+        } catch (error) {
+            setActionError(error.message);
+            throw error;
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const deleteWorkspaceById = async (workspace_id) => {
+        try {
+            setActionLoading(true);
+            setActionError(null);
+            await deleteWorkspace(workspace_id);
+            fetchWorkspaces();
+        } catch (error) {
+            setActionError(error.message);
+            throw error;
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchWorkspaces();
+    }, []);
+
+    const providerValue = {
+        workspaces: response?.data?.workspaces || [],
+        loading,
+        error,
+        actionLoading,
+        actionError,
+        refetch: fetchWorkspaces,
+        createNewWorkspace,
+        deleteWorkspaceById
+    };
+
+    return (
+        <WorkspacesContext.Provider value={providerValue}>
+            <Outlet />
+        </WorkspacesContext.Provider>
+    );
+};
+
+
+
+/* import React, { createContext, useEffect } from 'react';
 import { Outlet } from 'react-router';
 import useRequest from '../hooks/useRequest';
 import { getWorkspaces } from '../services/workspaceService';
@@ -33,4 +110,4 @@ export const WorkspacesContextProvider = () => {
             <Outlet />
         </WorkspacesContext.Provider>
     );
-};
+}; */
